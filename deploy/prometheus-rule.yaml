@@ -1,0 +1,47 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: zfs-storage
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: zfs-storage
+      rules:
+        - alert: ZfsPoolDegraded
+          expr: zfs_pool_health{state="DEGRADED"} == 1
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "ZFS pool {{ $labels.pool }} is DEGRADED"
+            description: "A disk is missing or failing. The pool still works but has no redundancy left: replace the disk before a second one fails."
+ 
+        - alert: ZfsPoolDown
+          expr: zfs_pool_health{state!~"ONLINE|DEGRADED"} == 1
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "ZFS pool {{ $labels.pool }} is not usable"
+            description: "The pool is in a state other than ONLINE or DEGRADED (FAULTED, UNAVAIL, SUSPENDED). Data on it is unreachable."
+ 
+        - alert: ZfsPoolAlmostFull
+          expr: 100 * zfs_pool_allocated_bytes / zfs_pool_size_bytes > 80
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "ZFS pool {{ $labels.pool }} is {{ $value | printf \"%.0f\" }}% full"
+            description: "ZFS slows down when a pool is nearly full, because copy-on-write always needs free space to write new blocks."
+ 
+        - alert: ZfsExporterDown
+          expr: up{job="zfs-storage"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "zfs-nfs-exporter on {{ $labels.instance }} is unreachable"
+            description: "Prometheus cannot scrape the exporter, so the storage server is not monitored. Check the VM and the systemd service."
+ 
