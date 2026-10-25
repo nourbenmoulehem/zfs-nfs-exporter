@@ -1,0 +1,14 @@
+[Unit]
+Description=Prometheus exporter for ZFS pools, ARC and NFS server stats
+After=network-online.target zfs.target nfs-server.service
+
+[Service]
+ExecStart=/usr/local/bin/zfs-nfs-exporter
+Restart=on-failure
+DynamicUser=yes
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

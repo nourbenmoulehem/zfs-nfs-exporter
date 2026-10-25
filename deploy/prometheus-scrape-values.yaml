@@ -1,0 +1,14 @@
+# Extra scrape target for kube-prometheus-stack (Helm values).
+# Apply with:
+#   helm upgrade <release> prometheus-community/kube-prometheus-stack \
+#     -n monitoring -f prometheus-values.yaml --version <current chart version>
+# Merge this block into your existing values file; -f replaces the previous values.
+prometheus:
+  prometheusSpec:
+    additionalScrapeConfigs:
+      - job_name: zfs-storage
+        scrape_interval: 15s
+        static_configs:
+          - targets: ["<zfs-ip>:9877"]
+            labels:
+              host: zfs-storage
